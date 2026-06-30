@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Humrahi brand tokens as CSS custom properties ──────────────────────── */
+:root {
+  --cloud: #F0EDE6;
+  --red: #BB1C2A;
+  --crimson: #7E1A20;
+  --ink: #2C2827;
+  --sand: #E5D9C2;
+  --taupe: #B8A78D;
+  --whisper: #F8F6F1;
+  --soft: #5A4F4A;
+  --taupe-dark: #6B5D45;
+}
+
+/* ── Base resets ─────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+    color: var(--ink);
+    background-color: var(--cloud);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Lora", Georgia, serif;
+  }
+
+  /* Respect reduced-motion for ring animations */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Focus ring — accessible, brand-coloured */
+  :focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+}
+
+/* ── Utility layer — brand component classes ─────────────────────────────── */
+@layer components {
+  /* Primary red button */
+  .btn-red {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           bg-red text-white font-inter font-medium text-sm rounded-card
+           transition-colors duration-150 hover:bg-crimson
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--red);
+  }
+  .btn-red:hover {
+    background-color: var(--crimson);
+  }
+
+  /* Ghost / secondary button */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           border border-current text-soft font-inter font-medium text-sm rounded-card
+           transition-colors duration-150 hover:bg-sand
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red focus-visible:ring-offset-2;
+  }
+
+  /* Standard card surface */
+  .card {
+    @apply rounded-card shadow-card bg-whisper p-6;
+  }
+  .card-sand {
+    @apply rounded-card shadow-card p-6;
+    background-color: var(--sand);
+  }
+
+  /* Eyebrow label (small uppercase overline) */
+  .eyebrow {
+    @apply text-xs font-inter font-semibold tracking-widest uppercase;
+    color: var(--taupe-dark);
+  }
+
+  /* Red underline accent (used under section headings) */
+  .red-rule {
+    @apply block w-10 h-0.5 mt-2;
+    background-color: var(--red);
+  }
+}
