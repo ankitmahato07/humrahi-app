@@ -28,7 +28,7 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
         <p className="text-soft text-sm text-center mb-8 leading-relaxed">
           What should we call you?
         </p>
-        <SetupForm userId={user.id} phone={user.phone ?? ""} next={next} intent={intent} />
+        <SetupForm userId={user.id} phone={user.phone ?? ""} email={user.email ?? ""} next={next} intent={intent} />
       </div>
     </main>
   );

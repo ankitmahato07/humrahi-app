@@ -79,16 +79,15 @@ export default async function DashboardPage() {
     .order("published_at", { ascending: false })
     .limit(3);
 
-  // Recognition wall — consented first names this month
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  // Recognition wall — most recent consented members. (Previously filtered to
+  // "joined this calendar month", which left the wall empty most of the time.)
   const { data: recognitionNames } = await supabase
     .from("humrahis")
     .select("first_name")
     .eq("consent_recognition", true)
-    .gte("joined_at", startOfMonth.toISOString())
-    .limit(20);
+    .not("first_name", "is", null)
+    .order("joined_at", { ascending: false })
+    .limit(24);
 
   return (
     <>

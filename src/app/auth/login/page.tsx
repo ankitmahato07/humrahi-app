@@ -4,7 +4,7 @@ import { HeldHeart } from "@/components/ui/HeldHeart";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in with your phone number to see your Humrahi impact.",
+  description: "Sign in with your email to see your Humrahi impact.",
 };
 
 interface LoginPageProps {
@@ -27,8 +27,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </h1>
           <p className="text-soft text-sm text-center mt-2 leading-relaxed">
             {intent === "claim"
-              ? "Enter your phone number to claim your impact and watch the meal your gift becomes."
-              : "Enter your phone number. We'll send a one-time code — no password needed."}
+              ? "Enter your email to claim your impact and watch the meal your gift becomes."
+              : "Enter your email and we'll send you a secure sign-in link — no password needed."}
           </p>
         </div>
 
