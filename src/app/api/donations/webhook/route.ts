@@ -1,20 +1,31 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { timingSafeEqual } from "node:crypto";
 import { ingestDonation } from "@/lib/utils/ingest";
+
+// Constant-time string compare (avoids leaking the secret via timing).
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // Sevastack webhook handler (Path A).
 // Sevastack POSTs a JSON body and includes a signature header.
-// Set SEVASTACK_WEBHOOK_SECRET in Vercel env vars.
+// Set SEVASTACK_WEBHOOK_SECRET in Vercel env vars to a strong random value.
 export async function POST(request: Request) {
   const secret = process.env.SEVASTACK_WEBHOOK_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
+  // Fail closed: refuse to run if unset OR still the dev placeholder, so the
+  // endpoint can't be abused to inject donations before it's properly wired.
+  if (!secret || secret === "localtestsecret") {
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
   }
 
   // Verify signature (Sevastack's exact header name TBD from their docs)
   const headersList = await headers();
   const sig = headersList.get("x-sevastack-signature") ?? headersList.get("x-webhook-signature");
-  if (!sig || sig !== secret) {
+  if (!sig || !safeEqual(sig, secret)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 

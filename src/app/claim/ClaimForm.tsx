@@ -31,6 +31,11 @@ export function ClaimForm() {
 
   return (
     <form action={formAction} className="rounded-card border border-taupe/40 bg-white shadow-card p-6 space-y-4">
+      <p className="text-sm text-soft">
+        We&apos;ll automatically find any gift made with your account email. If you
+        donated with a different email, enter your receipt number below.
+      </p>
+
       <div>
         <label htmlFor="external_id" className="block text-sm text-ink mb-1">
           Donation receipt number
@@ -40,21 +45,6 @@ export function ClaimForm() {
           name="external_id"
           type="text"
           placeholder="e.g. RC1001"
-          className="w-full text-sm rounded-card border border-taupe/50 bg-whisper px-3 py-2 text-ink placeholder:text-taupe focus:border-ink focus:outline-none"
-        />
-      </div>
-
-      <div className="text-center text-xs text-taupe-dark">— or —</div>
-
-      <div>
-        <label htmlFor="donor_email" className="block text-sm text-ink mb-1">
-          The email you donated with
-        </label>
-        <input
-          id="donor_email"
-          name="donor_email"
-          type="email"
-          placeholder="you@example.com"
           className="w-full text-sm rounded-card border border-taupe/50 bg-whisper px-3 py-2 text-ink placeholder:text-taupe focus:border-ink focus:outline-none"
         />
       </div>
