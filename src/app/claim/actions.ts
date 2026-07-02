@@ -23,23 +23,34 @@ export async function claimDonationAction(
   if (!user) redirect("/auth/login?next=/claim");
 
   const external_id = String(formData.get("external_id") ?? "").trim() || undefined;
-  const donor_email = String(formData.get("donor_email") ?? "").trim().toLowerCase() || undefined;
+  // Security: only ever match donations by the *authenticated* user's own email
+  // (server-derived), never an arbitrary address the user types — otherwise a
+  // user could claim someone else's donation history by guessing their email.
+  const ownEmail = user.email?.trim().toLowerCase() || undefined;
 
-  if (!external_id && !donor_email) {
-    return { ok: false, error: "Enter a receipt number or the email you donated with." };
+  if (!external_id && !ownEmail) {
+    return { ok: false, error: "Enter your donation receipt number to link a gift." };
   }
 
-  const res = await claimDonation(user.id, { external_id, donor_email });
-  if (!res.claimed) {
-    return { ok: false, error: "Something went wrong. Please try again." };
+  let total = 0;
+  // Auto-match any anonymous gifts made with the account's own email.
+  if (ownEmail) {
+    const r = await claimDonation(user.id, { donor_email: ownEmail });
+    if (r.claimed) total += r.count;
   }
-  if (res.count === 0) {
+  // Match by receipt number the donor holds (proof of possession).
+  if (external_id) {
+    const r = await claimDonation(user.id, { external_id });
+    if (r.claimed) total += r.count;
+  }
+
+  if (total === 0) {
     return {
       ok: false,
-      error: "No unclaimed gifts matched that. Double-check the receipt number or email.",
+      error: "No unclaimed gifts matched. Double-check the receipt number.",
     };
   }
 
   revalidatePath("/");
-  return { ok: true, count: res.count };
+  return { ok: true, count: total };
 }
