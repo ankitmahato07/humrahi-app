@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { DonationsChart } from "@/components/admin/DonationsChart";
 import { FunnelChart } from "@/components/admin/FunnelChart";
@@ -8,7 +8,8 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Admin overview" };
 
 export default async function AdminOverviewPage() {
-  const supabase = await createClient();
+  // Service-role client, returned only after admin identity is verified.
+  const { admin: supabase } = await requireAdmin();
 
   // ── KPI data ──────────────────────────────────────────────
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
@@ -29,7 +30,11 @@ export default async function AdminOverviewPage() {
     supabase.from("enquiries").select("id", { count: "exact", head: true }).gte("created_at", thirtyDaysAgo),
   ]);
 
-  const allDonations = donationSums ?? [];
+  const allDonations = (donationSums ?? []) as {
+    amount_inr: number;
+    donated_at: string;
+    designation: string;
+  }[];
   const recentDonations = allDonations.filter((d) => d.donated_at >= thirtyDaysAgo);
   const totalRaisedAllTime = allDonations.reduce((s, d) => s + Number(d.amount_inr), 0);
   const totalRaisedPeriod = recentDonations.reduce((s, d) => s + Number(d.amount_inr), 0);

@@ -1,21 +1,8 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { requireAdmin } from "@/lib/auth/requireAdmin";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) redirect("/auth/login?next=/admin");
-
-  const role = (user.app_metadata as Record<string, string>)?.role;
-  if (role !== "admin") redirect("/");
-
-  const { data: profile } = await supabase
-    .from("humrahis")
-    .select("first_name")
-    .eq("id", user.id)
-    .single();
+  const { profile } = await requireAdmin();
 
   return (
     <div className="min-h-screen bg-cloud">

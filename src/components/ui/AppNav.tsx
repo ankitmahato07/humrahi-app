@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HeldHeart } from "./HeldHeart";
+import Image from "next/image";
 
 interface AppNavProps {
   userName?: string | null;
@@ -18,7 +18,14 @@ export function AppNav({ userName }: AppNavProps) {
           className="flex items-center gap-2 text-ink hover:text-red transition-colors"
           aria-label="Humrahi — home"
         >
-          <HeldHeart size={24} />
+          <Image
+            src="/logo-submark.png"
+            alt="Humrahi"
+            width={30}
+            height={24}
+            priority
+            className="h-6 w-auto"
+          />
           <span className="font-lora text-base font-semibold tracking-wide">
             Humrahi
           </span>

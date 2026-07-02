@@ -1,4 +1,4 @@
-import { HeldHeart } from "@/components/ui/HeldHeart";
+import Image from "next/image";
 
 interface IdentityStripProps {
   firstName: string;
@@ -16,11 +16,11 @@ export function IdentityStrip({ firstName, city, sinceMonth, joinedAt }: Identit
   return (
     <section aria-label="Your identity" className="flex items-start gap-4">
       <div className="flex-shrink-0 mt-1">
-        <HeldHeart size={36} />
+        <Image src="/logo-submark.png" alt="Humrahi" width={45} height={36} className="h-9 w-auto" />
       </div>
       <div>
         <h2 className="font-lora text-2xl sm:text-3xl text-ink leading-snug">
-          You walk with us, {firstName}.
+          Thank you for walking with us, {firstName}.
         </h2>
         <p className="text-soft text-sm mt-1">
           A Humrahi since {sinceMonth ?? joinedMonthYear} · {city}

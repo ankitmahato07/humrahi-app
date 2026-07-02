@@ -79,13 +79,13 @@ export default async function DashboardPage() {
     .order("published_at", { ascending: false })
     .limit(3);
 
-  // Recognition wall — most recent consented members. (Previously filtered to
-  // "joined this calendar month", which left the wall empty most of the time.)
+  // Recognition wall — most recent consented members. Reads the limited
+  // `recognition_wall` view (first_name/city/joined_at only) rather than the
+  // humrahis table directly, so no PII (phone/email) is ever exposed and the
+  // base table stays locked to self+admin under RLS.
   const { data: recognitionNames } = await supabase
-    .from("humrahis")
+    .from("recognition_wall")
     .select("first_name")
-    .eq("consent_recognition", true)
-    .not("first_name", "is", null)
     .order("joined_at", { ascending: false })
     .limit(24);
 
