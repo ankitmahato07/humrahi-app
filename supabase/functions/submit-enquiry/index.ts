@@ -16,6 +16,8 @@
 //   SUPABASE_SERVICE_ROLE_KEY (auto-provided)
 //   TURNSTILE_SECRET          (optional until Turnstile is provisioned)
 //   ALLOWED_ORIGIN            (e.g. https://www.myhumrahi.org)
+//   RESEND_API_KEY            (optional — enables owner lead notifications)
+//   NOTIFY_EMAILS             (comma-separated recipients for lead alerts)
 //
 // Deploy:  supabase functions deploy submit-enquiry --no-verify-jwt
 // (public endpoint — it is called by unauthenticated website visitors)
@@ -46,6 +48,49 @@ function clean(v: unknown, max = 2000): string {
 }
 function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const NOTIFY_EMAILS = (Deno.env.get("NOTIFY_EMAILS") ?? "")
+  .split(",")
+  .map((e) => e.trim())
+  .filter(Boolean);
+
+// Owner alert for new leads. Best-effort: a notification failure must never
+// fail the submission, so errors are logged and swallowed.
+async function notifyOwner(kind: string, fields: Record<string, string | null>) {
+  if (!RESEND_API_KEY || NOTIFY_EMAILS.length === 0) return;
+  const esc = (v: string) =>
+    v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const rows = Object.entries(fields)
+    .filter(([, v]) => v)
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:4px 12px 4px 0;color:#6B5D45;">${esc(k)}</td>` +
+        `<td style="padding:4px 0;color:#2C2827;">${esc(String(v))}</td></tr>`,
+    )
+    .join("");
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Humrahi Website <noreply@myhumrahi.org>",
+        to: NOTIFY_EMAILS,
+        subject: `New ${kind}: ${fields["Name"] ?? fields["Email"] ?? "someone"}`,
+        html:
+          `<p>A new <strong>${esc(kind)}</strong> just arrived on myhumrahi.org.</p>` +
+          `<table style="font:14px/1.6 sans-serif;">${rows}</table>` +
+          `<p style="margin-top:16px;"><a href="https://app.myhumrahi.org/admin/volunteers">Open the CRM →</a></p>`,
+      }),
+    });
+    if (!r.ok) console.error("notifyOwner failed:", r.status, await r.text());
+  } catch (e) {
+    console.error("notifyOwner error:", e);
+  }
 }
 
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
@@ -103,6 +148,7 @@ Deno.serve(async (req) => {
         .from("newsletter_signups")
         .upsert({ email, source: "web:newsletter" }, { onConflict: "email" });
       if (error) throw error;
+      await notifyOwner("newsletter signup", { Email: email });
       return json({ ok: true });
     }
 
@@ -113,16 +159,28 @@ Deno.serve(async (req) => {
     if (email && !isEmail(email)) return json({ ok: false, error: "invalid_email" }, 400);
 
     const source = type === "contact" ? "web:contact" : "web:volunteer";
+    const phone = clean(payload["phone"], 40) || null;
+    const interest = clean(payload["interest"], 200) || null;
+    const availability = clean(payload["availability"], 200) || null;
+    const message = clean(payload["message"], 4000) || null;
     const { error } = await supabase.from("enquiries").insert({
       name,
       email: email || null,
-      phone: clean(payload["phone"], 40) || null,
-      interest: clean(payload["interest"], 200) || null,
-      availability: clean(payload["availability"], 200) || null,
-      message: clean(payload["message"], 4000) || null,
+      phone,
+      interest,
+      availability,
+      message,
       source,
     });
     if (error) throw error;
+    await notifyOwner(type === "contact" ? "contact enquiry" : "volunteer sign-up", {
+      Name: name,
+      Phone: phone,
+      Email: email || null,
+      Interest: interest,
+      Availability: availability,
+      Message: message,
+    });
     return json({ ok: true });
   } catch (e) {
     console.error("submit-enquiry error:", e);
