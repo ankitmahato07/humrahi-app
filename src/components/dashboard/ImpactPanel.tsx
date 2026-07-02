@@ -117,6 +117,12 @@ function EmptyImpactState() {
       >
         Give your first gift
       </a>
+      <p className="text-xs text-taupe-dark mt-4">
+        Already gave before signing in?{" "}
+        <Link href="/claim" className="underline hover:text-red transition-colors">
+          Claim your gift
+        </Link>
+      </p>
     </div>
   );
 }

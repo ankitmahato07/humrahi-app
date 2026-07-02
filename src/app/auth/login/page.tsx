@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { LoginForm } from "./LoginForm";
-import { HeldHeart } from "@/components/ui/HeldHeart";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in with your phone number to see your Humrahi impact.",
+  description: "Sign in with your email to see your Humrahi impact.",
 };
 
 interface LoginPageProps {
@@ -21,14 +21,21 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="w-full max-w-sm">
         {/* Brand mark */}
         <div className="flex flex-col items-center mb-10">
-          <HeldHeart size={48} />
-          <h1 className="font-lora text-2xl text-ink mt-4 text-center leading-snug">
+          <Image
+            src="/logo-humrahi.png"
+            alt="Humrahi — manavta ki ek nayi pehchaan"
+            width={240}
+            height={99}
+            priority
+            className="h-auto w-56"
+          />
+          <h1 className="font-lora text-2xl text-ink mt-6 text-center leading-snug">
             Become a Humrahi
           </h1>
           <p className="text-soft text-sm text-center mt-2 leading-relaxed">
             {intent === "claim"
-              ? "Enter your phone number to claim your impact and watch the meal your gift becomes."
-              : "Enter your phone number. We'll send a one-time code — no password needed."}
+              ? "Enter your email to claim your impact and watch the meal your gift becomes."
+              : "Enter your email and we'll send you a secure sign-in link — no password needed."}
           </p>
         </div>
 

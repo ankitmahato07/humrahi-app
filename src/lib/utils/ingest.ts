@@ -27,15 +27,18 @@ export async function ingestDonation(record: RawDonationRecord): Promise<{
 }> {
   const supabase = createAdminClient();
 
-  // Resolve humrahi_id by phone
+  // Resolve humrahi_id by phone. Phones are stored inconsistently (auth writes
+  // "917797663663" with no "+", while normalisePhone produces "+917797663663"),
+  // so match against every plausible format instead of a single exact string.
   let humrahi_id: string | null = null;
   if (record.donor_phone) {
-    const normPhone = normalisePhone(record.donor_phone);
+    const candidates = phoneCandidates(record.donor_phone);
     const { data: humrahi } = await supabase
       .from("humrahis")
       .select("id")
-      .eq("phone", normPhone)
-      .single();
+      .in("phone", candidates)
+      .limit(1)
+      .maybeSingle();
     humrahi_id = humrahi?.id ?? null;
   }
 
@@ -117,4 +120,20 @@ function normalisePhone(raw: string): string {
   if (digits.startsWith("91") && digits.length === 12) return `+${digits}`;
   if (digits.length === 10) return `+91${digits}`;
   return `+${digits}`;
+}
+
+// Every plausible stored representation of a phone number, so lookups match
+// regardless of whether the "+" / country code was saved.
+function phoneCandidates(raw: string): string[] {
+  const digits = raw.replace(/\D/g, "");
+  const last10 = digits.slice(-10);
+  const set = new Set<string>([
+    raw.trim(),
+    digits,
+    `+${digits}`,
+    last10,
+    `91${last10}`,
+    `+91${last10}`,
+  ]);
+  return [...set].filter(Boolean);
 }

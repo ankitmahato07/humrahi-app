@@ -39,7 +39,12 @@ export async function updateSession(request: NextRequest) {
   const publicPaths = [
     "/auth/login",
     "/auth/callback",
+    "/auth/confirm",
     "/api/auth",
+    // Machine-to-machine endpoints that authenticate themselves (webhook
+    // signature / cron secret) — must not be bounced to the login page.
+    "/api/donations/webhook",
+    "/api/sync",
   ];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
@@ -50,15 +55,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // /admin requires the admin role (carried in the JWT custom claim)
-  if (pathname.startsWith("/admin") && user) {
-    const role = (user.app_metadata as Record<string, string>)?.role;
-    if (role !== "admin") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-  }
+  // The /admin admin-gate lives in src/app/admin/layout.tsx via requireAdmin(),
+  // whose single source of truth is the humrahis.role column. We don't repeat it
+  // here because the reliable signal isn't in the JWT (app_metadata.role is never
+  // set), and querying the DB on every middleware request would be wasteful.
 
   return supabaseResponse;
 }

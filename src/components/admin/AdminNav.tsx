@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { HeldHeart } from "@/components/ui/HeldHeart";
+import Image from "next/image";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/donors", label: "Donors" },
+  { href: "/admin/donations", label: "Donations" },
   { href: "/admin/volunteers", label: "Volunteers" },
   { href: "/admin/drives", label: "Drives" },
   { href: "/admin/reveals", label: "Impact reveals" },
@@ -17,7 +18,14 @@ export function AdminNav({ userName }: { userName: string }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="h-14 flex items-center justify-between gap-6">
           <Link href="/admin" className="flex items-center gap-2 flex-shrink-0">
-            <HeldHeart size={22} />
+            <Image
+              src="/logo-submark-dark.png"
+              alt="Humrahi"
+              width={41}
+              height={28}
+              priority
+              className="h-7 w-auto"
+            />
             <span className="font-lora text-sm font-semibold text-white">Admin</span>
           </Link>
 

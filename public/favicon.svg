@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Humrahi Foundation">
+  <rect width="32" height="32" rx="7" fill="#BB1C2A"/>
+  <!-- Simplified "H" monogram — legible down to 16px -->
+  <g fill="#F8F6F1">
+    <rect x="8.8" y="8" width="4.64" height="16"/>
+    <rect x="18.56" y="8" width="4.64" height="16"/>
+    <rect x="8.8" y="13.9" width="14.4" height="4.2"/>
+  </g>
+</svg>

@@ -8,11 +8,12 @@ import { useRouter } from "next/navigation";
 interface SetupFormProps {
   userId: string;
   phone: string;
+  email: string;
   next: string;
   intent: string | null;
 }
 
-export function SetupForm({ userId, phone, next }: SetupFormProps) {
+export function SetupForm({ userId, phone, email, next }: SetupFormProps) {
   const [firstName, setFirstName] = useState("");
   const [city, setCity] = useState("Siliguri");
   const [consentRecognition, setConsentRecognition] = useState(false);
@@ -33,7 +34,10 @@ export function SetupForm({ userId, phone, next }: SetupFormProps) {
 
     const { error: upsertError } = await supabase.from("humrahis").upsert({
       id: userId,
-      phone,
+      // Nullable now (email-first signup). Never store "" — multiple empty
+      // strings would collide under the UNIQUE constraint; NULLs don't.
+      phone: phone.trim() || null,
+      email: email.trim().toLowerCase() || null,
       first_name: firstName.trim(),
       display_name: firstName.trim(),
       city: city.trim() || "Siliguri",
