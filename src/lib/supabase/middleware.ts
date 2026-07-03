@@ -45,6 +45,9 @@ export async function updateSession(request: NextRequest) {
     // signature / cron secret) — must not be bounced to the login page.
     "/api/donations/webhook",
     "/api/sync",
+    // Public donation flow — donors are not signed in.
+    "/donate",
+    "/api/razorpay",
   ];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
