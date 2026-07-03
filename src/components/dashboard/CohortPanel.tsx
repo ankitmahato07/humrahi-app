@@ -1,4 +1,5 @@
 import { Card, EyebrowLabel } from "@/components/ui/Card";
+import { DONATE_URL } from "@/lib/links";
 import type { Drive } from "@/types/database";
 
 interface CohortPanelProps {
@@ -80,12 +81,10 @@ export function CohortPanel({ cohort, cohortStats, drive, driveProgress }: Cohor
 
           {driveProgress < 1 && (
             <a
-              href={process.env.NEXT_PUBLIC_SEVASTACK_DONATE_URL ?? "https://www.myhumrahi.org/donate.html"}
+              href={DONATE_URL}
               className="mt-3 inline-block text-xs font-medium text-red underline hover:text-crimson transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
             >
-              Help close it ↗
+              Help close it
             </a>
           )}
         </div>

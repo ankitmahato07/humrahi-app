@@ -1,6 +1,7 @@
 import { Card, EyebrowLabel } from "@/components/ui/Card";
 import { ImpactRing } from "@/components/ui/ImpactRing";
 import type { DonorImpact, ImpactReveal } from "@/types/database";
+import { DONATE_URL } from "@/lib/links";
 import Link from "next/link";
 
 interface ImpactPanelProps {
@@ -53,12 +54,10 @@ export function ImpactPanel({ impact, reveals }: ImpactPanelProps) {
             <p className="text-xs text-soft mt-1 mb-4 leading-relaxed">
               Want to complete this term?{" "}
               <a
-                href={process.env.NEXT_PUBLIC_SEVASTACK_DONATE_URL ?? "https://www.myhumrahi.org/donate.html"}
+                href={DONATE_URL}
                 className="underline text-red hover:text-crimson transition-colors"
-                target="_blank"
-                rel="noopener noreferrer"
               >
-                Give again ↗
+                Give again
               </a>
             </p>
           )}
@@ -110,10 +109,8 @@ function EmptyImpactState() {
         Your impact story starts with your first gift. The kitchen opens at 6.
       </p>
       <a
-        href={process.env.NEXT_PUBLIC_SEVASTACK_DONATE_URL ?? "https://www.myhumrahi.org/donate.html"}
+        href={DONATE_URL}
         className="btn-red mt-4 inline-flex"
-        target="_blank"
-        rel="noopener noreferrer"
       >
         Give your first gift
       </a>
