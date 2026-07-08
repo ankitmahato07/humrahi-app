@@ -1,8 +1,9 @@
 // Panel D — Walk further: three equal-weight invitations.
 // No single loud CTA; balanced by design.
 
+import { DONATE_URL } from "@/lib/links";
+
 const WHATSAPP_COMMUNITY_LINK = process.env.NEXT_PUBLIC_WHATSAPP_COMMUNITY_URL ?? "https://wa.me/message/PLACEHOLDER";
-const SEVASTACK_DONATE_URL = process.env.NEXT_PUBLIC_SEVASTACK_DONATE_URL ?? "https://www.myhumrahi.org/donate.html";
 
 export function WalkFurther() {
   return (
@@ -15,9 +16,7 @@ export function WalkFurther() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Give again */}
         <a
-          href={SEVASTACK_DONATE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={DONATE_URL}
           className="card group hover:shadow-card-hover transition-shadow block"
           aria-label="Give again — donate to Humrahi Foundation"
         >

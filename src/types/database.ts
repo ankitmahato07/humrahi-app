@@ -2,7 +2,7 @@
 // Run `supabase gen types typescript` after applying migrations to regenerate.
 
 export type HumrahiRole = "humrahi" | "volunteer" | "drive_lead" | "admin";
-export type DonationSource = "sevastack_api" | "sevastack_csv" | "manual";
+export type DonationSource = "sevastack_api" | "sevastack_csv" | "manual" | "razorpay";
 export type DriveType = "monthly_cohort" | "drive";
 export type DriveStatus = "draft" | "active" | "closed";
 export type EnquiryStatus = "New" | "Contacted" | "Active" | "Closed";
