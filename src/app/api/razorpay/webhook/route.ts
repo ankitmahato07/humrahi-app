@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature, type RazorpayPayment } from "@/lib/razorpay";
 import { ingestDonation } from "@/lib/utils/ingest";
+import { sendDonationEmails } from "@/lib/email/send";
 
 // Razorpay webhook (configure in Dashboard → Settings → Webhooks pointing at
 // https://app.myhumrahi.org/api/razorpay/webhook with the payment.captured
@@ -57,6 +58,21 @@ export async function POST(request: Request) {
     // Non-2xx makes Razorpay retry later — ingestion is idempotent, so a
     // retry after a transient DB failure is exactly what we want.
     return NextResponse.json({ error: result.error }, { status: 500 });
+  }
+
+  // Only email on a genuine first insert. If the browser verify path already
+  // ingested this payment, `inserted` is false here and we stay silent.
+  if (result.inserted) {
+    await sendDonationEmails({
+      amount_inr: payment.amount / 100,
+      designation: mapDesignation(payment.notes?.designation),
+      payment_id: payment.id,
+      donated_at: new Date(payment.created_at * 1000).toISOString(),
+      donor_email: payment.email || null,
+      donor_phone: payment.contact || null,
+      donor_name: payment.notes?.name ?? null,
+      humrahi_linked: result.humrahi_linked,
+    });
   }
 
   return NextResponse.json({ ok: true, inserted: result.inserted, linked: result.humrahi_linked });
