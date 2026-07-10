@@ -82,11 +82,22 @@ export async function ingestDonation(record: RawDonationRecord): Promise<{
       .single();
 
     if (cohort) {
+      // Add to the running tally — a repeat donor (e.g. a monthly recurring
+      // gift) accumulates rather than resetting to the latest amount. The
+      // read-then-write pair is safe here: the `inserted` guard means each
+      // payment id passes at most once, and one donor's gifts don't overlap.
+      const { data: existing } = await supabase
+        .from("drive_participation")
+        .select("contributed_amount_inr")
+        .eq("drive_id", cohort.id)
+        .eq("humrahi_id", humrahi_id)
+        .maybeSingle();
+
       await supabase.from("drive_participation").upsert(
         {
           drive_id: cohort.id,
           humrahi_id,
-          contributed_amount_inr: record.amount_inr,
+          contributed_amount_inr: (existing?.contributed_amount_inr ?? 0) + record.amount_inr,
         },
         { onConflict: "drive_id,humrahi_id" }
       );

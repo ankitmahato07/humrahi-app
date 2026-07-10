@@ -9,7 +9,7 @@ The public site myhumrahi.org is a separate codebase — never touch it from her
 - Migrations are applied MANUALLY in Supabase Dashboard → SQL Editor. Repo is CLI-linked; do not `supabase db push` without asking.
 
 ## Structure
-- `src/app` — routes. Public (middleware allowlist): `/donate`, `/auth/*`, `/api/razorpay/{order,verify,webhook}`, `/api/donations/webhook` (Sevastack), `/api/sync/daily-reconcile` (Vercel cron `0 2 * * *` UTC via vercel.json; code comment says IST — wrong). Authed: `/` dashboard, `/account`, `/claim`. Admin: `/admin/*`, gated only by `requireAdmin()` in `src/app/admin/layout.tsx`.
+- `src/app` — routes. Public (middleware allowlist): `/donate`, `/auth/*`, `/api/razorpay/{order,subscription,verify,webhook}`, `/api/donations/webhook` (Sevastack), `/api/sync/daily-reconcile` (Vercel cron `0 2 * * *` UTC via vercel.json; code comment says IST — wrong). Authed: `/` dashboard, `/account`, `/claim`. Admin: `/admin/*`, gated only by `requireAdmin()` in `src/app/admin/layout.tsx`.
 - `src/lib/supabase/server.ts` — `createClient` (anon key + cookies, RLS applies) vs `createAdminClient` (SUPABASE_SERVICE_ROLE_KEY, bypasses RLS). Admin client is server-only; never let it reach client components.
 - `src/lib/utils/ingest.ts` — single ingestion path for all donation sources; idempotent on `external_id`.
 - `src/lib/razorpay.ts` — REST helpers + timing-safe HMAC verification (checkout + webhook).
@@ -38,6 +38,12 @@ Branded transactional emails share one design (Cloud Dancer/Charcoal/Sindoor-Red
 3. **`ingestDonation` overwrites `contributed_amount_inr`** (src/lib/utils/ingest.ts ~line 75): the `drive_participation` upsert sets it to the latest donation amount instead of summing — repeat donors in a cohort lose prior contributions from the tally.
 4. **GitHub PAT embedded in the `origin` remote URL** (`.git/config`). Rotate the token and re-add the remote without credentials.
 Rotate on any suspected leak: SUPABASE_SERVICE_ROLE_KEY, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET, SEVASTACK_WEBHOOK_SECRET, CRON_SECRET, GitHub PAT, RESEND_API_KEY.
+
+## Monthly recurring donations (Razorpay Subscriptions, added 2026-07-10)
+- `/api/razorpay/subscription` creates plan+subscription server-side (`findOrCreateMonthlyPlan` reuses a monthly INR plan of the same amount from the first 100 plans; `total_count` 120 = 10 years; `customer_notify=1` so Razorpay emails the donor the mandate + manage/cancel link). DonateForm has a Give once / Give monthly toggle; the static site passes `?freq=monthly` through.
+- Signature GOTCHA: subscription checkout signs `payment_id|subscription_id` (REVERSED vs orders' `order_id|payment_id`) — `verifySubscriptionCheckoutSignature` in `src/lib/razorpay.ts`.
+- Webhook: subscribe `subscription.charged` in addition to `payment.captured` (Dashboard → Webhooks), but the code no longer depends on it — a `payment.captured` carrying an `invoice_id` resolves invoice → subscription via the API and ingests with the right designation/`is_recurring`; if that lookup fails it returns 500 so Razorpay retries rather than mislabeling. Both events firing = idempotent no-op duplicate.
+- Designation for recurring gifts lives in the SUBSCRIPTION notes, not payment notes — never read it from a recurring payment entity. The verify route defers to the webhook (`deferred:true`) when it can't fetch subscription notes, because the first idempotent write wins forever.
 
 ## Rules
 - Run `supabase/migrations/006_razorpay.sql` on live Supabase BEFORE the first Razorpay donation: ingestion inserts `source='razorpay'` and fails on the old enum (webhook 500s and retries; verify-path errors are swallowed, so the donation silently never lands in the DB).
