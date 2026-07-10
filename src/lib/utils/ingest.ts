@@ -42,26 +42,36 @@ export async function ingestDonation(record: RawDonationRecord): Promise<{
     humrahi_id = humrahi?.id ?? null;
   }
 
-  const { error } = await supabase.from("donations").upsert(
-    {
-      humrahi_id,
-      donor_phone: record.donor_phone ? normalisePhone(record.donor_phone) : null,
-      donor_email: record.donor_email ?? null,
-      amount_inr: record.amount_inr,
-      donated_at: record.donated_at,
-      designation: record.designation ?? "general",
-      is_recurring: record.is_recurring ?? false,
-      source: record.source,
-      external_id: record.external_id,
-      raw: record.raw ?? {},
-    },
-    { onConflict: "external_id", ignoreDuplicates: true }
-  );
+  // ignoreDuplicates + .select() returns the row ONLY on a genuine insert; a
+  // conflict on external_id yields an empty set. That's how we tell a brand-new
+  // donation from a replay (Razorpay verify + webhook both call this), which
+  // gates one-time side effects like the donor thank-you email.
+  const { data: insertedRows, error } = await supabase
+    .from("donations")
+    .upsert(
+      {
+        humrahi_id,
+        donor_phone: record.donor_phone ? normalisePhone(record.donor_phone) : null,
+        donor_email: record.donor_email ?? null,
+        amount_inr: record.amount_inr,
+        donated_at: record.donated_at,
+        designation: record.designation ?? "general",
+        is_recurring: record.is_recurring ?? false,
+        source: record.source,
+        external_id: record.external_id,
+        raw: record.raw ?? {},
+      },
+      { onConflict: "external_id", ignoreDuplicates: true }
+    )
+    .select("id");
 
   if (error) return { inserted: false, humrahi_linked: false, error: error.message };
 
-  // Update drive_participation if there's an active monthly_cohort
-  if (humrahi_id) {
+  const inserted = (insertedRows?.length ?? 0) > 0;
+
+  // Update drive_participation if there's an active monthly_cohort. Only on a
+  // genuine insert, so a replayed payment doesn't re-touch the tally.
+  if (inserted && humrahi_id) {
     const { data: cohort } = await supabase
       .from("drives")
       .select("id")
@@ -72,18 +82,29 @@ export async function ingestDonation(record: RawDonationRecord): Promise<{
       .single();
 
     if (cohort) {
+      // Add to the running tally — a repeat donor (e.g. a monthly recurring
+      // gift) accumulates rather than resetting to the latest amount. The
+      // read-then-write pair is safe here: the `inserted` guard means each
+      // payment id passes at most once, and one donor's gifts don't overlap.
+      const { data: existing } = await supabase
+        .from("drive_participation")
+        .select("contributed_amount_inr")
+        .eq("drive_id", cohort.id)
+        .eq("humrahi_id", humrahi_id)
+        .maybeSingle();
+
       await supabase.from("drive_participation").upsert(
         {
           drive_id: cohort.id,
           humrahi_id,
-          contributed_amount_inr: record.amount_inr,
+          contributed_amount_inr: (existing?.contributed_amount_inr ?? 0) + record.amount_inr,
         },
         { onConflict: "drive_id,humrahi_id" }
       );
     }
   }
 
-  return { inserted: true, humrahi_linked: humrahi_id !== null };
+  return { inserted, humrahi_linked: humrahi_id !== null };
 }
 
 // Claims an anonymous donation by linking it to the signing-in user.

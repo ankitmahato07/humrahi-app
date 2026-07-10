@@ -11,6 +11,8 @@ const DESIGNATIONS = [
   { value: "school", label: "School terms" },
 ] as const;
 
+type Frequency = "once" | "monthly";
+
 type Status =
   | { state: "idle" }
   | { state: "loading" }
@@ -31,15 +33,17 @@ declare global {
 export default function DonateForm() {
   const [amount, setAmount] = useState<number>(1000);
   const [customAmount, setCustomAmount] = useState("");
+  const [frequency, setFrequency] = useState<Frequency>("once");
   const [designation, setDesignation] = useState<string>("general");
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const scriptLoaded = useRef(false);
 
-  // Pre-fill from ?amount= (the static site's donate page passes the chosen
-  // amount through). Read from window to avoid a useSearchParams Suspense
-  // boundary for a one-off read.
+  // Pre-fill from ?amount= and ?freq=monthly (the static site's donate page
+  // passes the chosen amount and frequency through). Read from window to
+  // avoid a useSearchParams Suspense boundary for a one-off read.
   useEffect(() => {
-    const fromUrl = Number(new URLSearchParams(window.location.search).get("amount"));
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = Number(params.get("amount"));
     if (Number.isInteger(fromUrl) && fromUrl >= 10 && fromUrl <= 500_000) {
       if (PRESETS.includes(fromUrl)) {
         setAmount(fromUrl);
@@ -47,6 +51,8 @@ export default function DonateForm() {
         setCustomAmount(String(fromUrl));
       }
     }
+    // Anything other than the exact value "monthly" stays one-time.
+    if (params.get("freq") === "monthly") setFrequency("monthly");
   }, []);
 
   // Load Razorpay Checkout once on mount.
@@ -72,21 +78,27 @@ export default function DonateForm() {
     setStatus({ state: "loading" });
 
     try {
-      const orderRes = await fetch("/api/razorpay/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount_inr: effectiveAmount, designation }),
-      });
-      const order = await orderRes.json();
-      if (!orderRes.ok) throw new Error(order.error ?? "Could not start the payment");
+      const monthly = frequency === "monthly";
+      const checkoutRes = await fetch(
+        monthly ? "/api/razorpay/subscription" : "/api/razorpay/order",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount_inr: effectiveAmount, designation }),
+        }
+      );
+      const order = await checkoutRes.json();
+      if (!checkoutRes.ok) throw new Error(order.error ?? "Could not start the payment");
 
       const checkout = new window.Razorpay({
         key: order.key_id,
-        order_id: order.order_id,
-        amount: order.amount,
-        currency: order.currency,
+        // A subscription checkout takes subscription_id; a one-time payment
+        // takes order_id + amount + currency. Never both.
+        ...(monthly
+          ? { subscription_id: order.subscription_id }
+          : { order_id: order.order_id, amount: order.amount, currency: order.currency }),
         name: "Humrahi Foundation",
-        description: "Donation",
+        description: monthly ? "Monthly donation" : "Donation",
         image: "/icon-192.png",
         notes: { designation },
         theme: { color: "#BB1C2A" },
@@ -94,7 +106,8 @@ export default function DonateForm() {
           ondismiss: () => setStatus({ state: "idle" }),
         },
         handler: async (resp: {
-          razorpay_order_id: string;
+          razorpay_order_id?: string;
+          razorpay_subscription_id?: string;
           razorpay_payment_id: string;
           razorpay_signature: string;
         }) => {
@@ -129,9 +142,21 @@ export default function DonateForm() {
       <div className="rounded-card bg-whisper p-8 text-center shadow-card">
         <p className="font-lora text-2xl text-ink">Thank you, humrahi. 🙏</p>
         <p className="mt-3 text-sm leading-relaxed text-soft">
-          Your gift of <strong>₹{effectiveAmount.toLocaleString("en-IN")}</strong> is on
-          its way to Siliguri. Razorpay has emailed you a payment confirmation
-          — your 80G receipt follows from our team.
+          {frequency === "monthly" ? (
+            <>
+              Your monthly gift of <strong>₹{effectiveAmount.toLocaleString("en-IN")}</strong> is
+              set up — the first one is already on its way to Siliguri, and Razorpay
+              will handle each month automatically. You can pause or cancel anytime
+              from the link in Razorpay&apos;s email, or by writing to
+              wecare@myhumrahi.org. Your 80G receipt follows from our team.
+            </>
+          ) : (
+            <>
+              Your gift of <strong>₹{effectiveAmount.toLocaleString("en-IN")}</strong> is on
+              its way to Siliguri. Razorpay has emailed you a payment confirmation
+              — your 80G receipt follows from our team.
+            </>
+          )}
         </p>
         <p className="mt-4 text-xs text-taupe-dark">Payment ID: {status.paymentId}</p>
         <a
@@ -146,6 +171,40 @@ export default function DonateForm() {
 
   return (
     <div className="rounded-card bg-whisper p-6 shadow-card sm:p-8">
+      <fieldset className="mb-5">
+        <legend className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-taupe-dark">
+          How often
+        </legend>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Donation frequency">
+          {(
+            [
+              { value: "once", label: "Give once" },
+              { value: "monthly", label: "Give monthly" },
+            ] as const
+          ).map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              aria-pressed={frequency === f.value}
+              onClick={() => setFrequency(f.value)}
+              className={`rounded-lg border px-3 py-3 text-sm font-semibold transition-colors ${
+                frequency === f.value
+                  ? "border-red bg-red text-white"
+                  : "border-taupe/50 bg-white text-ink hover:border-red"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        {frequency === "monthly" && (
+          <p className="mt-2 text-xs leading-relaxed text-taupe-dark">
+            Razorpay charges this amount automatically every month (UPI Autopay,
+            card or netbanking mandate). Cancel anytime.
+          </p>
+        )}
+      </fieldset>
+
       <fieldset>
         <legend className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-taupe-dark">
           Choose an amount
@@ -215,9 +274,11 @@ export default function DonateForm() {
       >
         {status.state === "loading"
           ? "Opening secure checkout…"
-          : amountValid
-            ? `Donate ₹${effectiveAmount.toLocaleString("en-IN")}`
-            : "Enter ₹10 – ₹5,00,000"}
+          : !amountValid
+            ? "Enter ₹10 – ₹5,00,000"
+            : frequency === "monthly"
+              ? `Give ₹${effectiveAmount.toLocaleString("en-IN")} every month`
+              : `Donate ₹${effectiveAmount.toLocaleString("en-IN")}`}
       </button>
     </div>
   );
