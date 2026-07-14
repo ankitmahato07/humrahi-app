@@ -6,7 +6,7 @@ The public site myhumrahi.org is a separate codebase — never touch it from her
 
 ## Commands
 - `npm run dev` / `build` / `start` / `lint` / `type-check` (tsc --noEmit). No test suite exists.
-- Migrations are applied MANUALLY in Supabase Dashboard → SQL Editor. Repo is CLI-linked; do not `supabase db push` without asking.
+- Migrations are applied MANUALLY in Supabase Dashboard → SQL Editor (project `ogmizlviplorxstknlaj`). Repo is CLI-linked; do not `supabase db push` without asking. A migration file existing in the repo does NOT mean it's live — confirm in the Dashboard.
 
 ## Structure
 - `src/app` — routes. Public (middleware allowlist): `/donate`, `/auth/*`, `/api/razorpay/{order,subscription,verify,webhook}`, `/api/donations/webhook` (Sevastack), `/api/sync/daily-reconcile` (Vercel cron `0 2 * * *` UTC via vercel.json; code comment says IST — wrong). Authed: `/` dashboard, `/account`, `/claim`. Admin: `/admin/*`, gated only by `requireAdmin()` in `src/app/admin/layout.tsx`.
@@ -34,8 +34,8 @@ Branded transactional emails share one design (Cloud Dancer/Charcoal/Sindoor-Red
 
 ## KNOWN OPEN SECURITY ITEMS (verified in code)
 1. **CRON_SECRET unset in Vercel** → `/api/sync/daily-reconcile` compares the header to the literal string `Bearer undefined`, so anyone sending that header passes — and legitimate Vercel cron gets 401. In non-production the check is skipped entirely. Set `CRON_SECRET`. (Route is a stub that only stamps `reconciled_at` via service role.)
-2. **Self role-escalation to admin**: RLS policy `humrahis: self update` (002_rls.sql) has no column restriction, so any signed-in user can `UPDATE humrahis SET role='admin'` on their own row via the anon client. `requireAdmin()` trusts exactly that column → full admin takeover. Fix with a column-guard trigger or split policy before wide launch.
-3. **`ingestDonation` overwrites `contributed_amount_inr`** (src/lib/utils/ingest.ts ~line 75): the `drive_participation` upsert sets it to the latest donation amount instead of summing — repeat donors in a cohort lose prior contributions from the tally.
+2. **Self role-escalation to admin — fix written, PENDING MANUAL APPLY**: RLS policies `humrahis: self update` AND `self insert` (002_rls.sql) have no column restriction, so any signed-in user could set `role='admin'` on their own row via the anon client; `requireAdmin()` trusts exactly that column → full admin takeover. `007_role_guard.sql` adds a BEFORE INSERT/UPDATE trigger that pins `role` for anon/authenticated writers (silently preserves the old value — SetupForm upserts an explicit `role:'humrahi'`, so raising would break admins re-running setup). Run 007 in the Dashboard SQL editor, then run its commented spot-check. Item closes only when applied live. Role changes remain possible via service role/Dashboard; the trigger function must stay SECURITY INVOKER.
+3. **FIXED in commit 0dbb7d1 (2026-07-10)** — `ingestDonation` now accumulates `contributed_amount_inr` (read-then-add, guarded by the once-per-payment `inserted` flag) instead of overwriting with the latest gift.
 4. **GitHub PAT embedded in the `origin` remote URL** (`.git/config`). Rotate the token and re-add the remote without credentials.
 Rotate on any suspected leak: SUPABASE_SERVICE_ROLE_KEY, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET, SEVASTACK_WEBHOOK_SECRET, CRON_SECRET, GitHub PAT, RESEND_API_KEY.
 
