@@ -1,8 +1,24 @@
 # CLAUDE.md — humrahi-app
 
-Donor/volunteer portal at **app.myhumrahi.org**. Next.js 15 App Router, React 19, Tailwind 3, Supabase.
-Deploys: Vercel project `humrahi-app-iuvy`, production = `main`. Supabase project `ogmizlviplorxstknlaj` (ap-southeast-2).
+Donor dashboard at **app.myhumrahi.org** (LIVE again since 2026-07-16 — revamped per
+`../dashboard-revamp-spec.md`). Next.js 15 App Router, React 19, Tailwind 3, Supabase.
+Deploys: Vercel project **`humrahi-app`** (the old `humrahi-app-iuvy` was deleted 2026-07-14),
+production = `main`, git-connected. Supabase project `ogmizlviplorxstknlaj` (ap-southeast-2).
 The public site myhumrahi.org is a separate codebase — never touch it from here.
+
+**2026-07-16 revamp (donor-facing):** identity = `profiles` table (shared with the static site's
+account.html) — `humrahis` is ONLY the admin-role gate; donations are read from **Seva Stack**
+server-side (`src/lib/sevastack.ts`, env `SEVASTACK_API_KEY`) — the local `donations` table and
+ingest/webhook/reconcile paths are dormant, do not revive for donor pages; 80G receipts are
+pdf-lib PDFs at `/api/receipts/[id]` + `/api/receipts/statement?fy=` (org constants inline) with
+Seva Stack `send_receipt` for email resends; campaigns = `drives` rows (`/campaigns`, admin CRUD
+at /admin/drives); first-login tour persists in `profiles.tour_done_at` (010); Google OAuth +
+magic link on /auth/login; post-auth redirects go through `src/lib/safeNext.ts` (open-redirect
+guard — keep it on every `next` param consumer).
+
+**⚠️ VERCEL GOTCHA:** a project created via bare `vercel project add` gets Framework Preset
+"Other" — builds look successful but EVERY path (pages and /_next/static) platform-404s.
+Fix in dashboard: Settings → Build and Deployment → Framework Preset → Next.js, redeploy.
 
 ## Commands
 - `npm run dev` / `build` / `start` / `lint` / `type-check` (tsc --noEmit). No test suite exists.
@@ -32,11 +48,12 @@ Branded transactional emails share one design (Cloud Dancer/Charcoal/Sindoor-Red
   2. **Resend must be out of sandbox/test mode** with `myhumrahi.org` domain verified (DKIM/SPF DNS records), incl. `wecare@` and `noreply@` as From addresses. In sandbox, mail only reaches the account owner and comes from `onboarding@resend.dev` — this is the "test period" look. DNS for myhumrahi.org is on Hostinger (but MX = Google Workspace — never touch `@`/MX records).
   3. Edge fn also needs `NOTIFY_EMAILS` set in Supabase secrets for the team alert.
 
-## KNOWN OPEN SECURITY ITEMS (verified in code)
-1. **CRON_SECRET unset in Vercel** → `/api/sync/daily-reconcile` compares the header to the literal string `Bearer undefined`, so anyone sending that header passes — and legitimate Vercel cron gets 401. In non-production the check is skipped entirely. Set `CRON_SECRET`. (Route is a stub that only stamps `reconciled_at` via service role.)
-2. **Self role-escalation to admin — fix written, PENDING MANUAL APPLY**: RLS policies `humrahis: self update` AND `self insert` (002_rls.sql) have no column restriction, so any signed-in user could set `role='admin'` on their own row via the anon client; `requireAdmin()` trusts exactly that column → full admin takeover. `007_role_guard.sql` adds a BEFORE INSERT/UPDATE trigger that pins `role` for anon/authenticated writers (silently preserves the old value — SetupForm upserts an explicit `role:'humrahi'`, so raising would break admins re-running setup). Run 007 in the Dashboard SQL editor, then run its commented spot-check. Item closes only when applied live. Role changes remain possible via service role/Dashboard; the trigger function must stay SECURITY INVOKER.
+## SECURITY ITEMS (status as of 2026-07-16)
+1. **CLOSED 2026-07-16** — `CRON_SECRET` set in Vercel prod; `Bearer undefined` probe returns 401 (verified live).
+2. **CLOSED 2026-07-16** — `007_role_guard.sql` APPLIED on the live project (trigger `humrahis_guard_role` verified via pg_trigger). Role changes remain possible via service role/Dashboard; the trigger function must stay SECURITY INVOKER.
 3. **FIXED in commit 0dbb7d1 (2026-07-10)** — `ingestDonation` now accumulates `contributed_amount_inr` (read-then-add, guarded by the once-per-payment `inserted` flag) instead of overwriting with the latest gift.
-4. **GitHub PAT embedded in the `origin` remote URL** (`.git/config`). Rotate the token and re-add the remote without credentials.
+4. **CLOSED 2026-07-16** — origin remote is credential-free (`https://github.com/ankitmahato07/humrahi-app.git`); pushes use `gh` auth. Still rotate the old PAT at github.com if it was never revoked.
+5. **FIXED 2026-07-16** — post-auth open redirect (`?next=@evil.com` / `//evil.com`) in auth/callback, auth/confirm, SetupForm; all `next` params now pass through `src/lib/safeNext.ts`.
 Rotate on any suspected leak: SUPABASE_SERVICE_ROLE_KEY, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET, SEVASTACK_WEBHOOK_SECRET, CRON_SECRET, GitHub PAT, RESEND_API_KEY.
 
 ## Monthly recurring donations (Razorpay Subscriptions, added 2026-07-10)
