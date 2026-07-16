@@ -97,9 +97,14 @@ function toSafe(d: RawDonation): SevaDonation {
   };
 }
 
-// All of the caller's donations, whitelisted. email MUST be the verified
-// session email. [] on not-found, not-configured, or any Seva Stack failure —
-// callers (pages) must render gracefully.
+// All of the caller's VERIFIED donations, whitelisted. email MUST be the
+// verified session email. [] on not-found, not-configured, or any Seva Stack
+// failure — callers (pages) must render gracefully.
+// VERIFIED-only is load-bearing: PENDING rows include abandoned/duplicate
+// payment attempts (a donor saw ₹1.5L instead of ₹50k), and totals feed the
+// impact numbers and the 80G statement/receipt PDFs — tax documents that must
+// only ever count received money. Seva Stack's own totalDonated is
+// verified-only; this keeps every surface consistent with the receipts.
 export async function getDonationsForEmail(email: string): Promise<SevaDonation[]> {
   if (!SEVASTACK_CONFIGURED) return [];
   const clean = email.trim().toLowerCase();
@@ -107,7 +112,7 @@ export async function getDonationsForEmail(email: string): Promise<SevaDonation[
   try {
     const donor = await findDonor(clean);
     const donations = donor && Array.isArray(donor.donations) ? donor.donations : [];
-    return donations.map(toSafe);
+    return donations.filter((d) => d.status === "VERIFIED").map(toSafe);
   } catch (e) {
     console.error("sevastack getDonationsForEmail:", e);
     return [];
