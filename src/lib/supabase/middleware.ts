@@ -41,13 +41,9 @@ export async function updateSession(request: NextRequest) {
     "/auth/callback",
     "/auth/confirm",
     "/api/auth",
-    // Machine-to-machine endpoints that authenticate themselves (webhook
-    // signature / cron secret) — must not be bounced to the login page.
-    "/api/donations/webhook",
-    "/api/sync",
-    // Public donation flow — donors are not signed in.
+    // Public donate URL — now a permanent redirect to the static site; donors
+    // are not signed in, so it must not be bounced to the login page.
     "/donate",
-    "/api/razorpay",
   ];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 

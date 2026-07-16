@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
-import { ImportDonations } from "@/components/admin/ImportDonations";
 
 export const metadata: Metadata = { title: "Donations" };
 
@@ -36,12 +35,10 @@ export default async function DonationsPage() {
       <div>
         <h1 className="font-lora text-2xl text-ink">Donations</h1>
         <p className="text-sm text-soft mt-1">
-          Donation records sync from Seva Stack. Until the live sync is wired, import a CSV
-          export below — donations link to Humrahis automatically by phone.
+          Donor-facing pages read live from Seva Stack. This view lists any records held in the
+          local donations table.
         </p>
       </div>
-
-      <ImportDonations />
 
       <div className="rounded-card border border-taupe/40 bg-white shadow-card overflow-hidden">
         <div className="px-5 py-3 border-b border-taupe/20 flex items-center justify-between">
@@ -52,7 +49,7 @@ export default async function DonationsPage() {
         </div>
         {donations.length === 0 ? (
           <div className="p-8 text-center text-soft text-sm">
-            No donations yet. Import a CSV above to get started.
+            No donations in the local table.
           </div>
         ) : (
           <div className="overflow-x-auto">

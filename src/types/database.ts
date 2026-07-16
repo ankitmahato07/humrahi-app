@@ -129,12 +129,3 @@ export interface AuditLog {
   created_at: string;
 }
 
-// Derived type for donor dashboard impact calculations
-export interface DonorImpact {
-  total_donated_inr: number;
-  meals_funded: number;       // floor(meals_designation_total / meal_cost)
-  camps_funded: number;       // floor(health_designation_total / camp_share)
-  school_term_fraction: number; // health_designation_total / school_term cost, 0–1
-  donation_count: number;
-  first_donation_at: string | null;
-}
