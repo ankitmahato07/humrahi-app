@@ -1,108 +1,96 @@
 import { redirect } from "next/navigation";
+import { getDonorContext } from "@/lib/donor";
 import { createClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/ui/AppNav";
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { GreetingStrip } from "@/components/dashboard/GreetingStrip";
+import { ImpactStrip } from "@/components/dashboard/ImpactStrip";
+import { CampaignsPreview } from "@/components/dashboard/CampaignsPreview";
+import { LatestReveal } from "@/components/dashboard/LatestReveal";
+import { GiveNudge } from "@/components/dashboard/GiveNudge";
+import { Tour } from "@/components/Tour";
+import type { Drive, ImpactReveal, ImpactRate } from "@/types/database";
 
-export default async function DashboardPage() {
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+export default async function OverviewPage() {
+  const donor = await getDonorContext();
+  if (!donor) redirect("/auth/login");
+  if (!donor.profile) redirect("/auth/setup");
+  if (!donor.profile.full_name) redirect("/auth/setup");
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth/login");
-
-  // Load Humrahi profile
-  const { data: profile } = await supabase
-    .from("humrahis")
+  const { data: drives } = await supabase
+    .from("drives")
     .select("*")
-    .eq("id", user.id)
-    .single();
+    .eq("status", "active")
+    .order("starts_at", { ascending: false })
+    .limit(3);
 
-  if (!profile?.first_name) redirect("/auth/setup");
+  const driveIds = (drives ?? []).map((d) => d.id);
+  const { data: participation } = driveIds.length
+    ? await supabase
+        .from("drive_participation")
+        .select("drive_id, contributed_amount_inr")
+        .in("drive_id", driveIds)
+    : { data: [] as { drive_id: string; contributed_amount_inr: number }[] };
 
-  // Load donations
-  const { data: donations } = await supabase
-    .from("donations")
-    .select("amount_inr, designation, donated_at, external_id")
-    .eq("humrahi_id", user.id)
-    .order("donated_at", { ascending: false });
+  const raisedByDrive = (participation ?? []).reduce<Record<string, number>>((acc, p) => {
+    acc[p.drive_id] = (acc[p.drive_id] ?? 0) + p.contributed_amount_inr;
+    return acc;
+  }, {});
 
-  // Load current impact rates
   const { data: rates } = await supabase
     .from("impact_rates")
     .select("*")
     .order("effective_from", { ascending: false });
 
-  // Load active drive / monthly cohort
-  const { data: activeDrives } = await supabase
-    .from("drives")
-    .select("*")
-    .eq("status", "active")
-    .order("starts_at", { ascending: false })
-    .limit(2);
-
-  const cohort = activeDrives?.find((d) => d.type === "monthly_cohort") ?? null;
-  const drive = activeDrives?.find((d) => d.type === "drive") ?? null;
-
-  // Cohort participation count & total
-  let cohortStats = { humrahi_count: 0, total_meals: 0 };
-  if (cohort) {
-    const { data: participation } = await supabase
-      .from("drive_participation")
-      .select("contributed_amount_inr")
-      .eq("drive_id", cohort.id);
-
-    const totalINR = participation?.reduce((s, p) => s + p.contributed_amount_inr, 0) ?? 0;
-    const mealCost = rates?.find((r) => r.key === "meal_cost")?.value_inr ?? 45;
-    cohortStats = {
-      humrahi_count: participation?.length ?? 0,
-      total_meals: Math.floor(totalINR / mealCost),
-    };
-  }
-
-  // Drive progress
-  let driveProgress = 0;
-  if (drive) {
-    const { data: driveParticipation } = await supabase
-      .from("drive_participation")
-      .select("contributed_amount_inr")
-      .eq("drive_id", drive.id);
-
-    const raised = driveParticipation?.reduce((s, p) => s + p.contributed_amount_inr, 0) ?? 0;
-    driveProgress = drive.goal_amount_inr ? Math.min(raised / drive.goal_amount_inr, 1) : 0;
-  }
-
-  // Recent impact reveals for this user (or broadcast)
   const { data: reveals } = await supabase
     .from("impact_reveals")
     .select("*")
-    .or(`humrahi_id.eq.${user.id},humrahi_id.is.null`)
     .not("published_at", "is", null)
     .order("published_at", { ascending: false })
-    .limit(3);
+    .limit(1);
 
-  // Recognition wall — most recent consented members. Reads the limited
-  // `recognition_wall` view (first_name/city/joined_at only) rather than the
-  // humrahis table directly, so no PII (phone/email) is ever exposed and the
-  // base table stays locked to self+admin under RLS.
-  const { data: recognitionNames } = await supabase
-    .from("recognition_wall")
-    .select("first_name")
-    .order("joined_at", { ascending: false })
-    .limit(24);
+  // ponytail: Seva Stack donations carry a free-text `purpose`, not a strict
+  // designation — so unlike the old local-donations math, meals/camps here
+  // both derive from the same totalInr against their respective impact_rates
+  // key. Simple and consistent; revisit if Seva Stack ever exposes a real
+  // per-gift designation split.
+  const mealCost = (rates as ImpactRate[] | null)?.find((r) => r.key === "meal_cost")?.value_inr ?? 45;
+  const campShare = (rates as ImpactRate[] | null)?.find((r) => r.key === "camp_share")?.value_inr ?? null;
+  const mealsFunded = Math.floor(donor.totalInr / mealCost);
+  const campsFunded = campShare ? Math.floor(donor.totalInr / campShare) : 0;
+
+  const recentlyGave = donor.lastDonationAt
+    ? Date.now() - new Date(donor.lastDonationAt).getTime() < THIRTY_DAYS_MS
+    : false;
+
+  const latestReveal = ((reveals as ImpactReveal[] | null) ?? [])[0] ?? null;
+  const firstName = donor.profile.full_name.trim().split(/\s+/)[0] ?? "Humrahi";
+
+  // Overview sections, ordered — future sections just get appended here.
+  const sections = [
+    <ImpactStrip
+      key="impact"
+      totalInr={donor.totalInr}
+      mealsFunded={mealsFunded}
+      campsFunded={campsFunded}
+      hasGiven={donor.donations.length > 0}
+    />,
+    <CampaignsPreview key="campaigns" drives={(drives as Drive[] | null) ?? []} raisedByDrive={raisedByDrive} />,
+    latestReveal ? <LatestReveal key="reveal" reveal={latestReveal} /> : null,
+    !recentlyGave ? <GiveNudge key="nudge" /> : null,
+  ].filter(Boolean);
 
   return (
     <>
-      <AppNav userName={profile.first_name} />
-      <DashboardShell
-        profile={profile}
-        donations={donations ?? []}
-        rates={rates ?? []}
-        cohort={cohort}
-        cohortStats={cohortStats}
-        drive={drive}
-        driveProgress={driveProgress}
-        reveals={reveals ?? []}
-        recognitionNames={recognitionNames?.map((r) => r.first_name).filter(Boolean) ?? []}
-      />
+      <AppNav userName={donor.profile.full_name} />
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <GreetingStrip firstName={firstName} />
+        {sections}
+      </main>
+      <Tour tourDone={donor.profile.tour_done_at !== null} />
     </>
   );
 }
