@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
+import { safeNext } from "@/lib/safeNext";
 
 interface SetupFormProps {
   userId: string;
@@ -13,11 +14,15 @@ interface SetupFormProps {
   intent: string | null;
 }
 
-export function SetupForm({ userId, phone, email, next }: SetupFormProps) {
-  const [firstName, setFirstName] = useState("");
-  const [city, setCity] = useState("Siliguri");
-  const [consentRecognition, setConsentRecognition] = useState(false);
-  const [consentMarketing, setConsentMarketing] = useState(false);
+// First-login profile setup — writes the `profiles` row (same fields as the
+// static site's account.html). full_name gates the callback redirect, so it's
+// required here.
+export function SetupForm({ userId, phone, next }: SetupFormProps) {
+  const [fullName, setFullName] = useState("");
+  const [accountType, setAccountType] = useState<"individual" | "organisation">("individual");
+  const [orgName, setOrgName] = useState("");
+  const [wantsUpdates, setWantsUpdates] = useState(true);
+  const [wantsWhatsapp, setWantsWhatsapp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -25,25 +30,21 @@ export function SetupForm({ userId, phone, email, next }: SetupFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!firstName.trim()) {
+    if (!fullName.trim()) {
       setError("Please tell us your name.");
       return;
     }
     setLoading(true);
     setError(null);
 
-    const { error: upsertError } = await supabase.from("humrahis").upsert({
+    const { error: upsertError } = await supabase.from("profiles").upsert({
       id: userId,
-      // Nullable now (email-first signup). Never store "" — multiple empty
-      // strings would collide under the UNIQUE constraint; NULLs don't.
+      full_name: fullName.trim(),
       phone: phone.trim() || null,
-      email: email.trim().toLowerCase() || null,
-      first_name: firstName.trim(),
-      display_name: firstName.trim(),
-      city: city.trim() || "Siliguri",
-      consent_recognition: consentRecognition,
-      consent_marketing: consentMarketing,
-      role: "humrahi",
+      account_type: accountType,
+      org_name: accountType === "organisation" ? orgName.trim() || null : null,
+      wants_updates: wantsUpdates,
+      wants_whatsapp: wantsWhatsapp,
     });
 
     if (upsertError) {
@@ -52,84 +53,80 @@ export function SetupForm({ userId, phone, email, next }: SetupFormProps) {
       return;
     }
 
-    // Record consents separately for the audit trail
-    const consentRows = [
-      { humrahi_id: userId, type: "recognition", granted: consentRecognition, granted_at: consentRecognition ? new Date().toISOString() : null },
-      { humrahi_id: userId, type: "marketing", granted: consentMarketing, granted_at: consentMarketing ? new Date().toISOString() : null },
-    ];
-    await supabase.from("consents").upsert(consentRows, { onConflict: "humrahi_id,type" });
-
-    router.push(next);
+    router.push(safeNext(next));
     router.refresh();
   }
 
   return (
     <form onSubmit={handleSubmit} className="bg-whisper rounded-card shadow-card p-6 space-y-5" noValidate>
       <div>
-        <label htmlFor="firstName" className="block text-sm font-medium text-ink mb-1.5">
-          First name
+        <label htmlFor="fullName" className="block text-sm font-medium text-ink mb-1.5">
+          Your name
         </label>
         <input
-          id="firstName"
+          id="fullName"
           type="text"
-          autoComplete="given-name"
+          autoComplete="name"
           autoFocus
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          placeholder="Ananya"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Ananya Sharma"
           className="w-full border border-taupe rounded-lg px-4 py-3 text-sm text-ink bg-white outline-none focus:ring-2 focus:ring-red focus:ring-offset-1"
           required
         />
       </div>
 
-      <div>
-        <label htmlFor="city" className="block text-sm font-medium text-ink mb-1.5">
-          Your city <span className="text-taupe-dark font-normal">(optional)</span>
+      <fieldset className="space-y-2">
+        <legend className="text-xs font-semibold text-taupe-dark uppercase tracking-wider mb-1">
+          You're giving as
+        </legend>
+        <label className="flex items-center gap-2 cursor-pointer text-sm text-soft">
+          <input type="radio" name="account_type" value="individual" checked={accountType === "individual"}
+            onChange={() => setAccountType("individual")} className="accent-red" />
+          An individual
         </label>
-        <input
-          id="city"
-          type="text"
-          autoComplete="address-level2"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="Siliguri"
-          className="w-full border border-taupe rounded-lg px-4 py-3 text-sm text-ink bg-white outline-none focus:ring-2 focus:ring-red focus:ring-offset-1"
-        />
-      </div>
+        <label className="flex items-center gap-2 cursor-pointer text-sm text-soft">
+          <input type="radio" name="account_type" value="organisation" checked={accountType === "organisation"}
+            onChange={() => setAccountType("organisation")} className="accent-red" />
+          A company / organisation
+        </label>
+      </fieldset>
 
-      {/* Consent toggles — separate, explicit, defaults private */}
+      {accountType === "organisation" && (
+        <div>
+          <label htmlFor="orgName" className="block text-sm font-medium text-ink mb-1.5">
+            Organisation name
+          </label>
+          <input
+            id="orgName"
+            type="text"
+            autoComplete="organization"
+            value={orgName}
+            onChange={(e) => setOrgName(e.target.value)}
+            placeholder="Company, NGO or institution name"
+            className="w-full border border-taupe rounded-lg px-4 py-3 text-sm text-ink bg-white outline-none focus:ring-2 focus:ring-red focus:ring-offset-1"
+          />
+        </div>
+      )}
+
       <fieldset className="space-y-3 pt-1">
         <legend className="text-xs font-semibold text-taupe-dark uppercase tracking-wider">
-          Your preferences
+          Staying in touch
         </legend>
-
-        <label className="flex items-start gap-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={consentRecognition}
-            onChange={(e) => setConsentRecognition(e.target.checked)}
-            className="mt-0.5 accent-red w-4 h-4 flex-shrink-0"
-          />
-          <span className="text-sm text-soft leading-relaxed">
-            Show my first name on the "Humrahis this month" wall
-            <span className="block text-xs text-taupe-dark mt-0.5">
-              Other Humrahis see only your first name — never your giving amount.
-            </span>
-          </span>
-        </label>
-
         <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={consentMarketing}
-            onChange={(e) => setConsentMarketing(e.target.checked)}
-            className="mt-0.5 accent-red w-4 h-4 flex-shrink-0"
-          />
+          <input type="checkbox" checked={wantsUpdates} onChange={(e) => setWantsUpdates(e.target.checked)}
+            className="mt-0.5 accent-red w-4 h-4 flex-shrink-0" />
           <span className="text-sm text-soft leading-relaxed">
             Send me occasional updates about our work
-            <span className="block text-xs text-taupe-dark mt-0.5">
-              A few messages a year. You can change this anytime.
-            </span>
+            <span className="block text-xs text-taupe-dark mt-0.5">A few messages a year. Change anytime.</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" checked={wantsWhatsapp} onChange={(e) => setWantsWhatsapp(e.target.checked)}
+            className="mt-0.5 accent-red w-4 h-4 flex-shrink-0" />
+          <span className="text-sm text-soft leading-relaxed">
+            Send me drive alerts on WhatsApp
+            <span className="block text-xs text-taupe-dark mt-0.5">Only when something's happening on the ground.</span>
           </span>
         </label>
       </fieldset>
