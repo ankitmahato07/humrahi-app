@@ -48,6 +48,9 @@ export async function updateSession(request: NextRequest) {
     // page POSTs to its own API route. Both must skip the auth redirect.
     "/jobready",
     "/api/jobready-signup",
+    // Public Assam flood relief pledge form (hosted on the static site) POSTs
+    // here cross-origin — no session, so it must skip the auth redirect.
+    "/api/relief-pledge",
   ];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
