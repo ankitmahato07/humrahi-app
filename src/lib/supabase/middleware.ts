@@ -44,6 +44,10 @@ export async function updateSession(request: NextRequest) {
     // Public donate URL — now a permanent redirect to the static site; donors
     // are not signed in, so it must not be bounced to the login page.
     "/donate",
+    // Public beneficiary funnel — signed-out visitors sign up here, and the
+    // page POSTs to its own API route. Both must skip the auth redirect.
+    "/jobready",
+    "/api/jobready-signup",
   ];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
