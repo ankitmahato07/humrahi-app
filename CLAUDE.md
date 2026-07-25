@@ -44,8 +44,14 @@ Public `/jobready` (middleware-allowlisted, no auth) = bilingual bn/en signup fo
 skilling; POSTs `/api/jobready-signup` (public, allowlisted) → normalizes phone to +91, honeypot +
 phone-dedupe, inserts via service role into `jobready_signups` (migration 011 — RLS on, NO anon
 policies, service-role-only; apply manually in SQL Editor). No email provider in this app, so the
-API returns `emailSent:false` (Seva Stack sends the real invite). Admin: `/admin/jobready` lists
-rows, copies `Name, +91…, email` bulk lines, and flips `invited_to_sevastack`.
+API returns `emailSent:false` (Seva Stack sends the real invite). The API also allows CORS POST from
+the static site (`https://www.myhumrahi.org` / apex only; OPTIONS handled). Admin: `/admin/jobready`
+lists rows, copies `Name, +91…, email` bulk lines, flips `invited_to_sevastack`, and toggles
+`sevastack_registered_at` (migration 012) once the person is a confirmed Seva Stack beneficiary.
+The Wadhwani enrol link is NEVER on the public page — it lives only in server code (`src/lib/jobready.ts`,
+server component `JobReadyCard`). The logged-in dashboard (`/`) matches the signup by email and
+unlocks that link ONLY when `sevastack_registered_at` is set; otherwise it shows a pending/promo card
+(and degrades to the promo card if migration 012 isn't applied yet).
 
 ## Auth flow
 Email magic link (`signInWithOtp`) → `/auth/callback` (PKCE code exchange; users without a profile name → `/auth/setup`, which client-side upserts their `humrahis` row with role `humrahi`) or `/auth/confirm` (token_hash links). Middleware only refreshes the session and redirects signed-out users; the admin check is `requireAdmin()`, which trusts the **humrahis.role column** (read via service role). Migration 003 mirrors that role into the JWT for RLS policies.

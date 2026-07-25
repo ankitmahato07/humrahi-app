@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { markInvited } from "./actions";
+import { markInvited, setSevastackRegistered } from "./actions";
 
 export type JobReadySignup = {
   id: string;
@@ -13,6 +13,7 @@ export type JobReadySignup = {
   is_minor: boolean;
   guardian_consent: boolean;
   invited_to_sevastack: boolean;
+  sevastack_registered_at: string | null;
 };
 
 export function JobReadyTable({ rows }: { rows: JobReadySignup[] }) {
@@ -105,6 +106,7 @@ export function JobReadyTable({ rows }: { rows: JobReadySignup[] }) {
               <th className="px-3 py-2 font-semibold">Minor</th>
               <th className="px-3 py-2 font-semibold">Created</th>
               <th className="px-3 py-2 font-semibold">Invited</th>
+              <th className="px-3 py-2 font-semibold">Registered</th>
             </tr>
           </thead>
           <tbody>
@@ -145,11 +147,45 @@ export function JobReadyTable({ rows }: { rows: JobReadySignup[] }) {
                     <span className="text-xs text-red">pending</span>
                   )}
                 </td>
+                <td className="px-3 py-2">
+                  <RegisteredToggle row={r} />
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+// Per-row "confirmed in Seva Stack" toggle. Setting it stamps
+// sevastack_registered_at (which unlocks the Wadhwani link in that person's
+// logged-in dashboard); clearing it reverts to NULL.
+function RegisteredToggle({ row }: { row: JobReadySignup }) {
+  const [pending, startTransition] = useTransition();
+  const registered = row.sevastack_registered_at !== null;
+
+  function onToggle() {
+    startTransition(async () => {
+      await setSevastackRegistered(row.id, !registered);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={pending}
+      title={registered ? "Registered in Seva Stack — click to clear" : "Mark registered in Seva Stack"}
+      className={
+        "rounded-card px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 " +
+        (registered
+          ? "bg-green-700 text-white hover:bg-green-800"
+          : "border border-taupe/60 bg-white text-soft hover:border-ink")
+      }
+    >
+      {pending ? "…" : registered ? "registered ✓" : "mark registered"}
+    </button>
   );
 }

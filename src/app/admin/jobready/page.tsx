@@ -10,7 +10,7 @@ export default async function AdminJobReadyPage() {
   const { data } = await admin
     .from("jobready_signups")
     .select(
-      "id, created_at, full_name, whatsapp_phone, email, language, is_minor, guardian_consent, invited_to_sevastack"
+      "id, created_at, full_name, whatsapp_phone, email, language, is_minor, guardian_consent, invited_to_sevastack, sevastack_registered_at"
     )
     .order("created_at", { ascending: false });
 

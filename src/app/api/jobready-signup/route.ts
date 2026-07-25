@@ -4,6 +4,36 @@ import { createAdminClient } from "@/lib/supabase/server";
 // Public endpoint — /jobready beneficiary funnel. Inserts via service role
 // (the jobready_signups table is RLS-locked with no anon policies).
 //
+// CORS: the static site (myhumrahi.org) may host the signup form and POST here
+// cross-origin. Echo back the request Origin only when it's one of ours — never
+// "*", and never an arbitrary origin. Same-origin requests (from /jobready) send
+// no Origin and just get no CORS header, which is fine.
+
+const ALLOWED_ORIGINS = new Set([
+  "https://www.myhumrahi.org",
+  "https://myhumrahi.org",
+]);
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin");
+  if (!origin || !ALLOWED_ORIGINS.has(origin)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "content-type",
+    Vary: "Origin",
+  };
+}
+
+// json() clone that always carries the CORS headers for this request.
+function json(req: Request, body: unknown, init?: { status?: number }) {
+  return NextResponse.json(body, { status: init?.status, headers: corsHeaders(req) });
+}
+
+export function OPTIONS(req: Request) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(req) });
+}
+//
 // EMAIL: no email provider is configured in this app (no Resend/SMTP dependency,
 // no provider key in .env.local — the old src/lib/email/* was removed 2026-07-16).
 // So we do NOT send a confirmation email; every response returns emailSent:false.
@@ -22,13 +52,13 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "bad_json" }, { status: 400 });
+    return json(req, { ok: false, error: "bad_json" }, { status: 400 });
   }
 
   // Honeypot: a filled "company" field means a bot. Return a success-shaped
   // response so we don't tip it off, but insert nothing.
   if (typeof body.company === "string" && body.company.trim() !== "") {
-    return NextResponse.json({ ok: true, emailSent: false });
+    return json(req, { ok: true, emailSent: false });
   }
 
   const full_name = String(body.full_name ?? "").trim();
@@ -40,13 +70,13 @@ export async function POST(req: Request) {
   const guardian_consent = body.guardian_consent === true;
 
   if (!full_name) {
-    return NextResponse.json({ ok: false, error: "name_required" }, { status: 400 });
+    return json(req, { ok: false, error: "name_required" }, { status: 400 });
   }
   if (!phone) {
-    return NextResponse.json({ ok: false, error: "invalid_phone" }, { status: 400 });
+    return json(req, { ok: false, error: "invalid_phone" }, { status: 400 });
   }
   if (is_minor && !guardian_consent) {
-    return NextResponse.json({ ok: false, error: "guardian_consent_required" }, { status: 400 });
+    return json(req, { ok: false, error: "guardian_consent_required" }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -59,7 +89,7 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   if (existing) {
-    return NextResponse.json({ ok: true, alreadyRegistered: true, emailSent: false });
+    return json(req, { ok: true, alreadyRegistered: true, emailSent: false });
   }
 
   const { error } = await admin.from("jobready_signups").insert({
@@ -72,8 +102,8 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ ok: false, error: "insert_failed" }, { status: 500 });
+    return json(req, { ok: false, error: "insert_failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, emailSent: false });
+  return json(req, { ok: true, emailSent: false });
 }

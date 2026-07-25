@@ -7,6 +7,8 @@ import { ImpactStrip } from "@/components/dashboard/ImpactStrip";
 import { CampaignsPreview } from "@/components/dashboard/CampaignsPreview";
 import { LatestReveal } from "@/components/dashboard/LatestReveal";
 import { GiveNudge } from "@/components/dashboard/GiveNudge";
+import { JobReadyCard } from "@/components/dashboard/JobReadyCard";
+import { getJobReadyStatus } from "@/lib/jobready";
 import { Tour } from "@/components/Tour";
 import type { Drive, ImpactReveal, ImpactRate } from "@/types/database";
 
@@ -69,6 +71,8 @@ export default async function OverviewPage() {
   const latestReveal = ((reveals as ImpactReveal[] | null) ?? [])[0] ?? null;
   const firstName = donor.profile.full_name.trim().split(/\s+/)[0] ?? "Humrahi";
 
+  const jobReady = await getJobReadyStatus(donor.user.email);
+
   // Overview sections, ordered — future sections just get appended here.
   const sections = [
     <ImpactStrip
@@ -79,6 +83,7 @@ export default async function OverviewPage() {
       hasGiven={donor.donations.length > 0}
     />,
     <CampaignsPreview key="campaigns" drives={(drives as Drive[] | null) ?? []} raisedByDrive={raisedByDrive} />,
+    <JobReadyCard key="jobready" status={jobReady} />,
     latestReveal ? <LatestReveal key="reveal" reveal={latestReveal} /> : null,
     !recentlyGave ? <GiveNudge key="nudge" /> : null,
   ].filter(Boolean);

@@ -4,11 +4,10 @@ import { useState } from "react";
 
 type Lang = "bn" | "en";
 
-// Wadhwani enrolment links (language-specific path). Institute code is Humrahi's.
-const WADHWANI = {
-  en: "https://skilling.wadhwanifoundation.org/en/register?instituteCode=HUMR-91-336742",
-  bn: "https://skilling.wadhwanifoundation.org/bn/register?instituteCode=HUMR-91-336742",
-} as const;
+// The Wadhwani enrolment link + institute code are NEVER exposed on this public
+// page — they live only in server code (src/lib/jobready.ts) and are sent by the
+// team via WhatsApp/email, then shown in the logged-in Humrahi dashboard once the
+// person is confirmed as a beneficiary in Seva Stack. Keep this file URL-free.
 const HELPLINE = "918001880016";
 
 // Both string sets hardcoded — no i18n lib (only two languages, one page).
@@ -38,11 +37,12 @@ const T = {
     errGuardian: "নাবালকদের জন্য অভিভাবকের সম্মতি দরকার",
     errServer: "কিছু একটা সমস্যা হয়েছে — আবার চেষ্টা করুন",
     okTitle: "আপনি রেজিস্টার হয়ে গেছেন ✅",
-    okDone: "স্টেপ ১ সম্পন্ন। এবার নিচের বোতামে ক্লিক করে ফ্রি কোর্সে এনরোল করুন।",
+    okDone:
+      "স্টেপ ১ সম্পন্ন। আমাদের টিম হোয়াটসঅ্যাপ ও ইমেলে আপনার কোর্সের লিঙ্ক পাঠাবে, এবং আপনি আপনার হুমরাহি অ্যাকাউন্টে সব কিছু ট্র্যাক করতে পারবেন।",
     alreadyTitle: "আপনি আগেই রেজিস্টার করেছেন ✅",
-    alreadyDone: "এই নম্বরটি আগেই রেজিস্টার করা আছে। নিচের বোতাম দিয়ে সরাসরি এনরোল করুন।",
-    enroll: "এখনই ফ্রি এনরোল করুন →",
-    getLink: "হোয়াটসঅ্যাপে লিঙ্ক নিন",
+    alreadyDone:
+      "এই নম্বরটি আগেই রেজিস্টার করা আছে। আমাদের টিম হোয়াটসঅ্যাপ/ইমেলে আপনার লিঙ্ক পাঠাবে — হুমরাহি অ্যাকাউন্টে ট্র্যাক করুন।",
+    getLink: "হোয়াটসঅ্যাপে আমাদের সাথে যোগাযোগ করুন",
     inviteSoon:
       "Seva Stack থেকে আপনার অফিসিয়াল বেনিফিশিয়ারি ইনভাইট শীঘ্রই ইমেলে পৌঁছে যাবে।",
     waText: (name: string) =>
@@ -73,11 +73,12 @@ const T = {
     errGuardian: "Guardian consent is required for minors",
     errServer: "Something went wrong — please try again",
     okTitle: "You're registered ✅",
-    okDone: "Step 1 done. Now tap below to enroll in the free courses.",
+    okDone:
+      "Step 1 done. Our team will send your course links on WhatsApp and email, and you can track everything in your Humrahi account.",
     alreadyTitle: "You're already registered ✅",
-    alreadyDone: "This number is already registered. Use the button below to enroll directly.",
-    enroll: "Enroll free now →",
-    getLink: "Get the link on WhatsApp",
+    alreadyDone:
+      "This number is already registered. Our team will send your links on WhatsApp/email — track them in your Humrahi account.",
+    getLink: "Message us on WhatsApp",
     inviteSoon: "Your official beneficiary invite from Seva Stack will reach your email soon.",
     waText: (name: string) =>
       `Hi Humrahi! I just signed up for JobReady as ${name || "a learner"}. Please send me my enrollment link.`,
@@ -168,19 +169,10 @@ export function JobReady() {
             </p>
 
             <a
-              href={WADHWANI[lang]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 block w-full rounded-card bg-red px-5 py-4 text-center text-base font-semibold text-white transition-colors hover:bg-crimson"
-            >
-              {t.enroll}
-            </a>
-
-            <a
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 block w-full rounded-card border border-taupe/60 bg-white px-5 py-3 text-center text-sm font-medium text-soft transition-colors hover:border-ink"
+              className="mt-6 block w-full rounded-card border border-taupe/60 bg-white px-5 py-3 text-center text-sm font-medium text-soft transition-colors hover:border-ink"
             >
               {t.getLink}
             </a>
