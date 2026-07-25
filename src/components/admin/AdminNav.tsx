@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: "/admin/donations", label: "Donations" },
   { href: "/admin/volunteers", label: "Volunteers" },
   { href: "/admin/drives", label: "Drives" },
+  { href: "/admin/jobready", label: "JobReady" },
   { href: "/admin/reveals", label: "Impact reveals" },
   { href: "/admin/content", label: "Content" },
   { href: "/admin/compliance", label: "Compliance" },

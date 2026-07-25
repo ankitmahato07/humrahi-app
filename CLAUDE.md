@@ -39,6 +39,14 @@ it; no writer exists). Don't resurrect any of it — `git show 646f4c7` if you n
 Leftover-but-harmless: `donation_source` enum values, `*.razorpay.com` CSP entries in
 next.config.ts, RAZORPAY_*/SEVASTACK_WEBHOOK_SECRET/CRON_SECRET/RESEND_API_KEY env vars in Vercel.
 
+## JobReady funnel (beneficiary signups, added 2026-07-25)
+Public `/jobready` (middleware-allowlisted, no auth) = bilingual bn/en signup for free Wadhwani
+skilling; POSTs `/api/jobready-signup` (public, allowlisted) → normalizes phone to +91, honeypot +
+phone-dedupe, inserts via service role into `jobready_signups` (migration 011 — RLS on, NO anon
+policies, service-role-only; apply manually in SQL Editor). No email provider in this app, so the
+API returns `emailSent:false` (Seva Stack sends the real invite). Admin: `/admin/jobready` lists
+rows, copies `Name, +91…, email` bulk lines, and flips `invited_to_sevastack`.
+
 ## Auth flow
 Email magic link (`signInWithOtp`) → `/auth/callback` (PKCE code exchange; users without a profile name → `/auth/setup`, which client-side upserts their `humrahis` row with role `humrahi`) or `/auth/confirm` (token_hash links). Middleware only refreshes the session and redirects signed-out users; the admin check is `requireAdmin()`, which trusts the **humrahis.role column** (read via service role). Migration 003 mirrors that role into the JWT for RLS policies.
 
