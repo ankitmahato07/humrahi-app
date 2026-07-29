@@ -8,10 +8,10 @@ import type { JobReadyStatus } from "@/lib/jobready";
 export function JobReadyCard({ status }: { status: JobReadyStatus }) {
   if (status.kind === "unlocked") {
     return (
-      <section aria-label="Your JobReady skilling">
+      <section aria-label="Your Humrahi Bhor skilling">
         <div className="rounded-card border border-sand bg-white p-6 shadow-card">
           <p className="text-xs font-semibold uppercase tracking-wider text-red">
-            JobReady × Wadhwani Foundation
+            Humrahi Bhor × Wadhwani JobReady
           </p>
           <h2 className="mt-1 font-lora text-xl text-ink">You&apos;re all set to start learning 🎉</h2>
           <p className="mt-2 text-sm leading-relaxed text-soft">
@@ -34,10 +34,10 @@ export function JobReadyCard({ status }: { status: JobReadyStatus }) {
 
   if (status.kind === "pending") {
     return (
-      <section aria-label="Your JobReady skilling">
+      <section aria-label="Your Humrahi Bhor skilling">
         <div className="rounded-card border border-sand bg-whisper p-6">
           <p className="text-xs font-semibold uppercase tracking-wider text-taupe-dark">
-            JobReady skilling
+            Humrahi Bhor skilling
           </p>
           <h2 className="mt-1 font-lora text-xl text-ink">Registration received ✅</h2>
           <p className="mt-2 text-sm leading-relaxed text-soft">
@@ -52,11 +52,11 @@ export function JobReadyCard({ status }: { status: JobReadyStatus }) {
 
   // No signup on record → gentle promo (no Wadhwani URL).
   return (
-    <section aria-label="Free JobReady skilling">
+    <section aria-label="Humrahi Bhor — free skilling">
       <div className="rounded-card border border-sand bg-whisper p-6">
         <p className="text-xs font-semibold uppercase tracking-wider text-red">New</p>
         <h2 className="mt-1 font-lora text-xl text-ink">
-          Free JobReady skilling with Wadhwani Foundation
+          Humrahi Bhor — free skilling, powered by Wadhwani JobReady
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-soft">
           Free online courses with a certificate — Humrahi is your local training partner. Register

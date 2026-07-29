@@ -14,10 +14,10 @@ const HELPLINE = "918001880016";
 const T = {
   bn: {
     switch: "English",
-    kicker: "হুমরাহি × ওয়াধওয়ানি ফাউন্ডেশন",
-    title: "ফ্রি জবরেডি স্কিলিং",
+    kicker: "হামরাহি × ওয়াধওয়ানি ফাউন্ডেশন",
+    title: "হামরাহি ভোর — ফ্রি স্কিলিং",
     pitch:
-      "ওয়াধওয়ানি ফাউন্ডেশনের সঙ্গে ফ্রি জবরেডি স্কিলিং — ১০টি ফ্রি কোর্স, সার্টিফিকেট + স্কিল স্কোরকার্ড, এবং কোর্স শেষ করলে জব কানেক্ট জব পোর্টাল খুলে যায়। হুমরাহি এখানে আপনার স্থানীয় ট্রেনিং পার্টনার।",
+      "হামরাহি ভোর — ওয়াধওয়ানি জবরেডি দ্বারা পরিচালিত ফ্রি স্কিলিং — ১০টি ফ্রি কোর্স, সার্টিফিকেট + স্কিল স্কোরকার্ড, এবং কোর্স শেষ করলে জব কানেক্ট জব পোর্টাল খুলে যায়। হামরাহি এখানে আপনার স্থানীয় ট্রেনিং পার্টনার।",
     freeNote: "চিরকাল ফ্রি। কোনো চাকরির গ্যারান্টি নেই — আমরা সৎভাবে বলছি।",
     nameLabel: "পুরো নাম",
     namePh: "আপনার নাম",
@@ -38,22 +38,22 @@ const T = {
     errServer: "কিছু একটা সমস্যা হয়েছে — আবার চেষ্টা করুন",
     okTitle: "আপনি রেজিস্টার হয়ে গেছেন ✅",
     okDone:
-      "স্টেপ ১ সম্পন্ন। আমাদের টিম হোয়াটসঅ্যাপ ও ইমেলে আপনার কোর্সের লিঙ্ক পাঠাবে, এবং আপনি আপনার হুমরাহি অ্যাকাউন্টে সব কিছু ট্র্যাক করতে পারবেন।",
+      "স্টেপ ১ সম্পন্ন। আমাদের টিম হোয়াটসঅ্যাপ ও ইমেলে আপনার কোর্সের লিঙ্ক পাঠাবে, এবং আপনি আপনার হামরাহি অ্যাকাউন্টে সব কিছু ট্র্যাক করতে পারবেন।",
     alreadyTitle: "আপনি আগেই রেজিস্টার করেছেন ✅",
     alreadyDone:
-      "এই নম্বরটি আগেই রেজিস্টার করা আছে। আমাদের টিম হোয়াটসঅ্যাপ/ইমেলে আপনার লিঙ্ক পাঠাবে — হুমরাহি অ্যাকাউন্টে ট্র্যাক করুন।",
+      "এই নম্বরটি আগেই রেজিস্টার করা আছে। আমাদের টিম হোয়াটসঅ্যাপ/ইমেলে আপনার লিঙ্ক পাঠাবে — হামরাহি অ্যাকাউন্টে ট্র্যাক করুন।",
     getLink: "হোয়াটসঅ্যাপে আমাদের সাথে যোগাযোগ করুন",
     inviteSoon:
       "Seva Stack থেকে আপনার অফিসিয়াল বেনিফিশিয়ারি ইনভাইট শীঘ্রই ইমেলে পৌঁছে যাবে।",
     waText: (name: string) =>
-      `হ্যালো হুমরাহি! আমি ${name || "একজন"} জবরেডির জন্য সাইন আপ করেছি। দয়া করে আমার এনরোলমেন্ট লিঙ্ক পাঠান।`,
+      `হ্যালো হামরাহি! আমি ${name || "একজন"} হামরাহি ভোরের জন্য সাইন আপ করেছি। দয়া করে আমার এনরোলমেন্ট লিঙ্ক পাঠান।`,
   },
   en: {
     switch: "বাংলা",
     kicker: "Humrahi × Wadhwani Foundation",
-    title: "Free JobReady skilling",
+    title: "Humrahi Bhor — free skilling",
     pitch:
-      "Free JobReady skilling with Wadhwani Foundation — 10 free courses, a certificate + Skill Scorecard, and the Job Connect job portal unlocks when you finish. Humrahi is your local training partner.",
+      "Humrahi Bhor — free skilling powered by Wadhwani JobReady — 10 free courses, a certificate + Skill Scorecard, and the Job Connect job portal unlocks when you finish. Humrahi is your local training partner.",
     freeNote: "Free forever. No job guarantees — we tell you honestly.",
     nameLabel: "Full name",
     namePh: "Your name",
@@ -81,7 +81,7 @@ const T = {
     getLink: "Message us on WhatsApp",
     inviteSoon: "Your official beneficiary invite from Seva Stack will reach your email soon.",
     waText: (name: string) =>
-      `Hi Humrahi! I just signed up for JobReady as ${name || "a learner"}. Please send me my enrollment link.`,
+      `Hi Humrahi! I just signed up for Humrahi Bhor as ${name || "a learner"}. Please send me my enrollment link.`,
   },
 } as const;
 
