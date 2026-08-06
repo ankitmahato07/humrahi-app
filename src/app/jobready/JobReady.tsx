@@ -8,7 +8,7 @@ type Lang = "bn" | "en";
 // page — they live only in server code (src/lib/jobready.ts) and are sent by the
 // team via WhatsApp/email, then shown in the logged-in Humrahi dashboard once the
 // person is confirmed as a beneficiary in Seva Stack. Keep this file URL-free.
-const HELPLINE = "918001880016";
+const HELPLINE = "917797707700";
 
 // Both string sets hardcoded — no i18n lib (only two languages, one page).
 const T = {

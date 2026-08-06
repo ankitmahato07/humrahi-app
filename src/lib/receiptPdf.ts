@@ -18,7 +18,7 @@ const ORG = {
   reg80gValid: "valid to AY 2028-29",
   darpan: "WB/2025/0721671",
   email: "wecare@myhumrahi.org",
-  phone: "+91 8001880016",
+  phone: "+91 7797707700",
   address: "Parmeshwar Niwas, Nagru Jote, Guria, Matigara, West Bengal",
 };
 

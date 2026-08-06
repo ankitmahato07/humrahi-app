@@ -38,7 +38,7 @@ export function OPTIONS(req: Request) {
 // no provider key in .env.local — the old src/lib/email/* was removed 2026-07-16).
 // So we do NOT send a confirmation email; every response returns emailSent:false.
 // The beneficiary's official invite comes from Seva Stack out-of-band. If a
-// provider is ever added, send here (Step-2 Wadhwani link + wa.me/918001880016).
+// provider is ever added, send here (Step-2 Wadhwani link + wa.me/917797707700).
 
 // Accept +91XXXXXXXXXX or a bare 10-digit Indian mobile (starts 6-9).
 function normalizePhone(raw: string): string | null {

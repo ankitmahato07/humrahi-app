@@ -64,7 +64,7 @@ const NOTIFY_EMAILS = (Deno.env.get("NOTIFY_EMAILS") ?? "")
 const FROM_CARE = "Humrahi Foundation <wecare@myhumrahi.org>";
 const FROM_SYSTEM = "Humrahi Website <noreply@myhumrahi.org>";
 const REPLY_TO = "wecare@myhumrahi.org";
-const CARE_PHONE = "+91 80018 80016";
+const CARE_PHONE = "+91 77977 07700";
 
 const escHtml = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
