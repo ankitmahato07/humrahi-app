@@ -92,8 +92,8 @@ export default async function HowWeCountPage() {
               partner — and cross-checked daily. Sevastack holds the financial source of
               truth; what you see here is a reconciled display. If you notice a discrepancy,
               write to us at{" "}
-              <a href="mailto:wecare@myhumrahi.org" className="underline hover:text-red transition-colors">
-                wecare@myhumrahi.org
+              <a href="mailto:a@myhumrahi.org" className="underline hover:text-red transition-colors">
+                a@myhumrahi.org
               </a>
               .
             </p>

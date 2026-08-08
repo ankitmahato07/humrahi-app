@@ -164,7 +164,7 @@ export function AccountForm({ profile, pendingRequests }: AccountFormProps) {
 
         {requestDone ? (
           <p className="text-sm text-ink">
-            Your request has been received. We'll write to you at <strong>wecare@myhumrahi.org</strong> within 30 days.
+            Your request has been received. We'll write to you at <strong>a@myhumrahi.org</strong> within 30 days.
           </p>
         ) : (
           <div className="flex gap-3 flex-wrap">

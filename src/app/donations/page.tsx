@@ -40,7 +40,7 @@ export default async function DonationsPage() {
             <br />
             <span className="text-taupe text-xs">
               Gave with a different email?{" "}
-              <a href="mailto:wecare@myhumrahi.org" className="underline">
+              <a href="mailto:a@myhumrahi.org" className="underline">
                 Tell us
               </a>{" "}
               and we&apos;ll link it to your account.

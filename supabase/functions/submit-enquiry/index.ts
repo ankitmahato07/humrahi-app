@@ -19,7 +19,7 @@
 //   RESEND_API_KEY            (optional — enables the branded team alert AND the
 //                              warm auto-reply to whoever wrote in. The sending
 //                              domain myhumrahi.org must be verified in Resend,
-//                              incl. wecare@ as a From address.)
+//                              incl. a@ as a From address.)
 //   NOTIFY_EMAILS             (comma-separated recipients for the team alert)
 //
 // Deploy:  supabase functions deploy submit-enquiry --no-verify-jwt
@@ -59,11 +59,11 @@ const NOTIFY_EMAILS = (Deno.env.get("NOTIFY_EMAILS") ?? "")
   .map((e) => e.trim())
   .filter(Boolean);
 
-// From addresses. Auto-replies come from the human wecare inbox (so a reply
+// From addresses. Auto-replies come from the CEO's a@ inbox (so a reply
 // reaches a person); the internal alert comes from noreply.
-const FROM_CARE = "Humrahi Foundation <wecare@myhumrahi.org>";
+const FROM_CARE = "Humrahi Foundation <a@myhumrahi.org>";
 const FROM_SYSTEM = "Humrahi Website <noreply@myhumrahi.org>";
-const REPLY_TO = "wecare@myhumrahi.org";
+const REPLY_TO = "a@myhumrahi.org";
 const CARE_PHONE = "+91 77977 07700";
 
 const escHtml = (v: unknown) =>
@@ -90,7 +90,7 @@ function emailShell(preheader: string, bodyHtml: string): string {
     `<tr><td style="background:#F8F6F1;border-top:1px solid #E5D9C2;padding:22px 40px;font-family:${SANS};color:#B8A78D;font-size:12px;line-height:1.7;">` +
     `Humrahi Foundation · Parameshwar Niwas, Gudiya Jote, Matigara, Siliguri, Darjeeling, West Bengal<br>` +
     `<a href="https://www.myhumrahi.org" style="color:#BB1C2A;text-decoration:none;">myhumrahi.org</a> &nbsp;·&nbsp; ` +
-    `<a href="mailto:wecare@myhumrahi.org" style="color:#BB1C2A;text-decoration:none;">wecare@myhumrahi.org</a> &nbsp;·&nbsp; ${CARE_PHONE}` +
+    `<a href="mailto:a@myhumrahi.org" style="color:#BB1C2A;text-decoration:none;">a@myhumrahi.org</a> &nbsp;·&nbsp; ${CARE_PHONE}` +
     `</td></tr></table></td></tr></table></body></html>`;
 }
 
